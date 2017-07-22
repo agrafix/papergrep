@@ -16,13 +16,20 @@ import Data.Option
 import Data.XML.Types
 import Text.XML.Stream.Parse
 import qualified Data.ByteString as BS
+import qualified Data.Text as T
 import qualified Data.Vector as V
 
 fromFile :: MonadResource m => FilePath -> Source m Entry
-fromFile fp = parseFile def fp =$= parseEntries
+fromFile fp = parseFile opts fp =$= parseEntries
 
 fromBS :: MonadThrow m => BS.ByteString -> Source m Entry
-fromBS bs = yield bs =$ parseBytes def =$= parseEntries
+fromBS bs = yield bs =$ parseBytes opts =$= parseEntries
+
+opts :: ParseSettings
+opts =
+    def
+    { psDecodeEntities = decodeHtmlEntities
+    }
 
 parseEntries :: MonadThrow m => Conduit Event m Entry
 parseEntries =
@@ -30,13 +37,13 @@ parseEntries =
 
 parseEntry :: MonadThrow m => Consumer Event m (Maybe Entry)
 parseEntry =
-    tag' (anyOf entryTags) (requireAttr "key") $ \e_key ->
+    tag' (anyOf entryTags) (requireAttr "key" <* ignoreAttrs) $ \e_key ->
     do e_authors <- V.fromList <$> many (tagIgnoreAttrs "author" content)
        e_title <-
-           tagIgnoreAttrs "title" content >>= \t ->
+           tagIgnoreAttrs "title" titleParser >>= \t ->
            case t of
              Nothing -> throwM (XmlException "Missing title tag" Nothing)
-             Just ok -> pure ok
+             Just ok -> pure $ T.concat ok
        e_pages <- maybeToOption <$> tagIgnoreAttrs "pages" content
        e_year <- maybeToOption <$> tagIgnoreAttrs "year" content
        e_volume <- maybeToOption <$> tagIgnoreAttrs "volume" content
@@ -45,9 +52,16 @@ parseEntry =
        e_ee <- maybeToOption <$> tagIgnoreAttrs "ee" content
        many_ ignoreAnyTreeContent
        pure Entry {..}
-
     where
       entryTags =
           [ "www", "phdthesis", "inproceedings", "incollection"
           , "proceedings", "book", "mastersthesis", "article"
           ]
+      textTag x =
+          tagIgnoreAttrs x content
+      titleParser =
+          many $
+          contentMaybe
+              `orE` textTag "i"
+              `orE` textTag "sub"
+              `orE` textTag "sup"
