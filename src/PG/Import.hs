@@ -6,60 +6,48 @@ module PG.Import
     )
 where
 
-import Control.Error
-import Data.Functor.Identity
+import PG.Types
+
+import Control.Monad
+import Control.Monad.Catch
+import Control.Monad.Trans.Resource
+import Data.Conduit
 import Data.Option
+import Data.XML.Types
+import Text.XML.Stream.Parse
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as BSC
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
 import qualified Data.Vector as V
-import qualified Text.XML.Hexml as Xml
 
-data Entry
-    = Entry
-    { e_key :: {-# UNPACK #-} !T.Text
-    , e_authors :: {-# UNPACK #-} !(V.Vector T.Text)
-    , e_title :: {-# UNPACK #-} !T.Text
-    , e_year :: {-# UNPACK #-} !(Option T.Text)
-    , e_journal :: {-# UNPACK #-} !(Option T.Text)
-    , e_url :: {-# UNPACK #-} !(Option T.Text)
-    , e_ee :: {-# UNPACK #-} !(Option T.Text)
-    , e_pages :: {-# UNPACK #-}  !(Option T.Text)
-    , e_volume :: {-# UNPACK #-} !(Option T.Text)
-    } deriving (Show, Eq)
+fromFile :: MonadResource m => FilePath -> Source m Entry
+fromFile fp = parseFile def fp =$= parseEntries
 
-fromFile :: FilePath -> IO (Either BS.ByteString (V.Vector Entry))
-fromFile fp =
-    do bs <- BS.readFile fp
-       pure (fromBS bs)
+fromBS :: MonadThrow m => BS.ByteString -> Source m Entry
+fromBS bs = yield bs =$ parseBytes def =$= parseEntries
 
-fromBS :: BS.ByteString -> Either BS.ByteString (V.Vector Entry)
-fromBS bs =
-    runIdentity $ runExceptT $
-    do node <- ExceptT $ pure (Xml.parse $ BSC.unlines $ drop 2 $ BSC.lines bs)
-       let ch = Xml.children node
-       es <- V.fromList <$> mapM parseEntry ch
-       pure es
+parseEntries :: MonadThrow m => Conduit Event m Entry
+parseEntries =
+    void $ tagNoAttr "dblp" $ manyYield parseEntry
 
-parseEntry :: Monad m => Xml.Node -> ExceptT BS.ByteString m Entry
-parseEntry n =
-    do e_key <-
-           T.decodeLatin1 . Xml.attributeValue <$>
-           Xml.attributeBy n "key" ?? "Missing key attribute in node"
-       let e_authors =
-               V.fromList $ map decodeTag $ Xml.childrenBy n "author"
+parseEntry :: MonadThrow m => Consumer Event m (Maybe Entry)
+parseEntry =
+    tag' (anyOf entryTags) (requireAttr "key") $ \e_key ->
+    do e_authors <- V.fromList <$> many (tagIgnoreAttrs "author" content)
        e_title <-
-           decodeTag <$> (headMay (Xml.childrenBy n "title") ?? "Missing title")
-       let e_year = optSingleFld "year"
-           e_journal = optSingleFld "journal"
-           e_url = optSingleFld "url"
-           e_ee = optSingleFld "ee"
-           e_pages = optSingleFld "pages"
-           e_volume = optSingleFld "volume"
+           tagIgnoreAttrs "title" content >>= \t ->
+           case t of
+             Nothing -> throwM (XmlException "Missing title tag" Nothing)
+             Just ok -> pure ok
+       e_pages <- maybeToOption <$> tagIgnoreAttrs "pages" content
+       e_year <- maybeToOption <$> tagIgnoreAttrs "year" content
+       e_volume <- maybeToOption <$> tagIgnoreAttrs "volume" content
+       e_journal <- maybeToOption <$> tagIgnoreAttrs "journal" content
+       e_url <- maybeToOption <$> tagIgnoreAttrs "url" content
+       e_ee <- maybeToOption <$> tagIgnoreAttrs "ee" content
+       many_ ignoreAnyTreeContent
        pure Entry {..}
+
     where
-        decodeTag = T.decodeLatin1 . Xml.inner
-        optSingleFld x =
-            maybeToOption $
-            decodeTag <$> headMay (Xml.childrenBy n x)
+      entryTags =
+          [ "www", "phdthesis", "inproceedings", "incollection"
+          , "proceedings", "book", "mastersthesis", "article"
+          ]
