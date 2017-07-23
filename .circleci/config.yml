@@ -10,7 +10,7 @@ jobs:
       - image: circleci/postgres:9.6.3-alpine
         environment:
           POSTGRES_USER: root
-          POSTGRES_DB: papergrep
+          POSTGRES_DB: root
     steps:
       - checkout
       - restore_cache:
@@ -31,4 +31,4 @@ jobs:
           command: 'stack build --fast --pedantic'
       - run:
           name: stack test
-          command: 'createdb root && stack test --fast'
+          command: 'stack test --fast'
