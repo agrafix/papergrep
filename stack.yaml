@@ -1,26 +1,9 @@
 resolver: lts-8.23
 packages:
   - .
-  - location:
-      git: https://github.com/factisresearch/full-text-search
-      commit: 2d9869986650d9c5576a0c5073804065597623df
-    extra-dep: true
 extra-deps:
   - strict-data-0.1.1.0
   - xml-conduit-1.5.1
-  - tokenize-0.3.0
-  - snowball-1.0.0.1
   - hasql-pool-0.4.1
   - simple-logger-0.0.3
   - text-utils-0.1.0.0
-
-extra-include-dirs:
-  - /usr/local/opt/icu4c/include
-  - /usr/local/opt/leveldb/include
-  - /usr/local/opt/snappy/include
-  - /usr/local/include
-extra-lib-dirs:
-  - /usr/local/opt/icu4c/lib
-  - /usr/local/opt/leveldb/lib
-  - /usr/local/opt/snappy/lib
-  - /usr/local/lib

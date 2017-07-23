@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 import PG.Import
-import PG.Search
+import PG.Store
 import PG.Types
+import PG.Xml
 
 import Control.Monad.Trans.Resource
 import Data.Conduit
@@ -39,10 +40,10 @@ main =
 assertSearch :: T.Text -> IO ()
 assertSearch q =
      do sr <-
-            runResourceT $
-            withSearchEngine (fromFile "test-data/dblp-mini.xml") $ \se ->
-            searchEntry se q
-        let es = re_value <$> sortOn re_rank (sr_entries sr)
+            withTempStore $ \store ->
+            do importToStore store (fromFile "test-data/dblp-mini.xml")
+               searchEntry store q
+        let es = re_entry <$> sortOn re_rank (V.toList sr)
         es `shouldBe` [sanjeev]
 
 sanjeev :: Entry
@@ -52,7 +53,7 @@ sanjeev =
     , e_type = EtArticle
     , e_authors = V.fromList ["Sanjeev Saxena"]
     , e_title = "Parallel Integer Sorting and Simulation Amongst CRCW Models."
-    , e_year = Some "1996"
+    , e_year = Some 1996
     , e_journal = Some "Acta Inf."
     , e_url = Some "db/journals/acta/acta33.html#Saxena96"
     , e_ee = Some "https://doi.org/10.1007/BF03036466"
@@ -70,7 +71,7 @@ dblpMini =
       , e_type = EtArticle
       , e_authors = V.fromList ["Peter E. Bulychev","Alexandre David","Kim G. Larsen","Guangyuan Li"]
       , e_title = "Efficient controller synthesis for a fragment of MTL0,\8734."
-      , e_year = Some "2014"
+      , e_year = Some 2014
       , e_journal = Some "Acta Inf."
       , e_url = Some "db/journals/acta/acta51.html#BulychevDLL14"
       , e_ee = Some "https://doi.org/10.1007/s00236-013-0189-z"
@@ -84,7 +85,7 @@ dblpMini =
       , e_type = EtArticle
       , e_authors = V.fromList ["Andrzej Dudek","Vojtech R\246dl"]
       , e_title = "On Ks-free subgraphs in Ks+k-free graphs and vertex Folkman numbers."
-      , e_year = Some "2011"
+      , e_year = Some 2011
       , e_journal = Some "Combinatorica"
       , e_url = Some "db/journals/combinatorica/combinatorica31.html#DudekR11"
       , e_ee = Some "https://doi.org/10.1007/s00493-011-2626-3"
@@ -98,7 +99,7 @@ dblpMini =
       , e_type = EtProc
       , e_authors = V.empty
       , e_title = "Transactions on High-Performance Embedded Architectures and Compilers II"
-      , e_year = Some "2009"
+      , e_year = Some 2009
       , e_journal = None
       , e_url = Some "db/journals/thipeac/thipeac2.html"
       , e_ee = Some "https://doi.org/10.1007/978-3-642-00904-4"

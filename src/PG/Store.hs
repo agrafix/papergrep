@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module PG.Store
-    ( newPgSqlStore
+    ( newPgSqlStore, withTempStore
     , Store
     , putEntry, searchEntry
     )
@@ -10,14 +10,18 @@ where
 
 import PG.Types
 
+import Control.Exception
 import Control.Logger.Simple
 import Control.Monad.Trans
 import Data.Functor.Contravariant
 import Data.Option
 import Data.Text.ToFromText
+import System.Random
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import qualified Hasql.Connection as C
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 import qualified Hasql.Migration as M
@@ -42,6 +46,41 @@ withPool pss sess =
            do logError (showText err)
               fail (show err)
          Right ok -> pure ok
+
+withTempStore :: (Store -> IO a) -> IO a
+withTempStore run =
+    bracket allocDb removeDb $ \(_, dbname) ->
+    bracket (newPgSqlStore $ "dbname=" <> dbname) (\_ -> pure ()) $ run
+    where
+        assertRight y =
+            case y of
+              Right x -> pure x
+              Left errMsg -> fail (show errMsg)
+        removeDb (globalConn, dbname) =
+            do runRes2 <-
+                   flip S.run globalConn $ S.sql $ "DROP DATABASE IF EXISTS " <> dbname
+               assertRight runRes2
+               C.release globalConn
+        allocDb =
+            do globalConnE <- C.acquire ""
+               globalConn <- assertRight globalConnE
+               dbnameSuffix <-
+                   BSC.pack . take 10 . randomRs ('a', 'z') <$>
+                   newStdGen
+               let dbname = "chrtest" <> dbnameSuffix
+               runRes <-
+                   flip S.run globalConn $
+                   do S.sql $ "DROP DATABASE IF EXISTS " <> dbname
+                      S.sql $ "CREATE DATABASE " <> dbname
+               assertRight runRes
+               localConnE <- C.acquire $ "dbname=" <> dbname
+               localConn <- assertRight localConnE
+               runRes' <-
+                   flip S.run localConn $
+                   do S.sql $ "CREATE EXTENSION hstore"
+               assertRight runRes'
+               C.release localConn
+               pure (globalConn, dbname)
 
 newPgSqlStore :: BS.ByteString -> IO Store
 newPgSqlStore connStr =
