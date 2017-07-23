@@ -1,0 +1,34 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/papergrep
+    docker:
+      - image: fpco/stack-build:lts-8.23
+        environment:
+          PGHOST: 127.0.0.1
+          PGUSER: root
+      - image: circleci/postgres:9.6.3-alpine
+        environment:
+          POSTGRES_USER: root
+          POSTGRES_DB: papergrep
+    steps:
+      - checkout
+      - restore_cache:
+          key: stack-cache
+      - run:
+          name: stack setup
+          command: 'stack setup'
+      - run:
+          name: stack install dependencies
+          command: 'stack build --test --only-dependencies'
+      - save_cache:
+          key: stack-cache
+          paths:
+            - ~/.stack
+            - ~/papergrep/.stack-work
+      - run:
+          name: stack build
+          command: 'stack build --fast --pedantic'
+      - run:
+          name: stack test
+          command: 'stack test --fast'
