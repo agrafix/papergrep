@@ -62,16 +62,9 @@ parseEntry =
            (,) <$> pure n <*> innerText
        let getMany x = map snd $ filter ((==) x . fst) tagKvs
            getOpt = maybeToOption . listToMaybe . getMany
-           getReq x =
-               case getOpt x of
-                 Some y -> pure y
-                 None ->
-                     throwM $
-                     XmlException (T.unpack $ "Missing " <> nameLocalName x <> " for " <> e_key)
-                     Nothing
            e_authors = V.fromList $ getMany "author"
-       e_title <- getReq "title"
-       let e_pages = getOpt "pages"
+       let e_title = getOpt "title"
+           e_pages = getOpt "pages"
            e_year = join $ maybeToOption . readMay . T.unpack <$> getOpt "year"
            e_volume = getOpt "volume"
            e_journal = getOpt "journal"

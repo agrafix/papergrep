@@ -133,7 +133,7 @@ putEntryQ =
           contramap e_key (E.value E.text)
           <> contramap (toText . e_type) (E.value E.text)
           <> contramap e_authors (E.value (E.array (E.arrayDimension V.foldl' (E.arrayValue E.text))))
-          <> contramap e_title (E.value E.text)
+          <> contramap (optionToMaybe . e_title) (E.nullableValue E.text)
           <> contramap (fmap fromIntegral . optionToMaybe . e_year) (E.nullableValue E.int4)
           <> contramap (optionToMaybe . e_journal) (E.nullableValue E.text)
           <> contramap (optionToMaybe . e_url) (E.nullableValue E.text)
@@ -169,7 +169,7 @@ searchEntryQ =
           do e_key <- D.value D.text
              e_type <- D.value D.text >>= fromText
              e_authors <- D.value (D.array (D.arrayDimension V.replicateM (D.arrayValue D.text)))
-             e_title <- D.value D.text
+             e_title <- maybeToOption <$> D.nullableValue D.text
              e_year <- fmap fromIntegral . maybeToOption <$> D.nullableValue D.int4
              e_journal <- maybeToOption <$> D.nullableValue D.text
              e_url <- maybeToOption <$> D.nullableValue D.text

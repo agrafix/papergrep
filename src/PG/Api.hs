@@ -15,7 +15,7 @@ type SearchResult
          '[ "key" := T.Text
           , "ty" := T.Text
           , "authors" := V.Vector T.Text
-          , "title" := T.Text
+          , "title" := Maybe T.Text
           , "year" := Maybe Int
           , "journal" := Maybe T.Text
           , "url" := Maybe T.Text

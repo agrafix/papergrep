@@ -44,7 +44,7 @@ data Entry
     { e_key :: {-# UNPACK #-} !T.Text
     , e_type :: !EntryType
     , e_authors :: {-# UNPACK #-} !(V.Vector T.Text)
-    , e_title :: {-# UNPACK #-} !T.Text
+    , e_title :: !(Option T.Text)
     , e_year :: !(Option Int)
     , e_journal :: !(Option T.Text)
     , e_url :: !(Option T.Text)
