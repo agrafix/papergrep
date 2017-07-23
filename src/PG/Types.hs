@@ -9,9 +9,23 @@ import GHC.Generics
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
+data EntryType
+    = EtWWW
+    | EtPhd
+    | EtInProc
+    | EtInColl
+    | EtProc
+    | EtBook
+    | EtMaster
+    | EtArticle
+    deriving (Show, Eq, Generic)
+
+instance Store EntryType
+
 data Entry
     = Entry
     { e_key :: {-# UNPACK #-} !T.Text
+    , e_type :: !EntryType
     , e_authors :: {-# UNPACK #-} !(V.Vector T.Text)
     , e_title :: {-# UNPACK #-} !T.Text
     , e_year :: !(Option T.Text)

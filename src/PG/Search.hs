@@ -63,7 +63,14 @@ withSearchEngine src go =
                    do let k = T.encodeUtf8 $ e_key e
                           v = S.encode e
                       L.put hdl L.defaultWriteOptions k v
-                      loop hdl (insertDocs [e] s)
+                      let addIndex = insertDocs [e] s
+                          noIndex = s
+                      loop hdl $
+                          case e_type e of
+                            EtWWW -> noIndex
+                            EtMaster -> noIndex
+                            EtBook -> noIndex
+                            _ -> addIndex
       searchConfig =
           SearchConfig
           { documentKey = e_key

@@ -2,8 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE BangPatterns #-}
 module PG.Import
-    ( Entry(..)
-    , fromBS, fromFile
+    ( fromBS, fromFile
     )
 where
 
@@ -41,8 +40,23 @@ parseEntries =
 
 parseEntry :: MonadThrow m => Consumer Event m (Maybe Entry)
 parseEntry =
-    tag' (anyOf entryTags) (requireAttr "key" <* ignoreAttrs) $ \e_key ->
-    do tagKvs <-
+    tag (anyOf entryTags) (\n -> ((,) <$> pure n <*> requireAttr "key") <* ignoreAttrs) $
+    \(ety, e_key) ->
+    do e_type <-
+           case ety of
+             "www" -> pure EtWWW
+             "phdthesis" -> pure EtPhd
+             "inproceedings" -> pure EtInProc
+             "incollection" -> pure EtInColl
+             "proceedings" -> pure EtProc
+             "book" -> pure EtBook
+             "mastersthesis" -> pure EtMaster
+             "article" -> pure EtArticle
+             _ ->
+                 throwM $
+                 XmlException (T.unpack $ "Invalid entry type " <> nameLocalName ety <> " for " <> e_key)
+                 Nothing
+       tagKvs <-
            many $
            tag anyName (\n -> ignoreAttrs *> pure n) $ \n ->
            (,) <$> pure n <*> innerText
