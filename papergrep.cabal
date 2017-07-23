@@ -31,7 +31,6 @@ library
                      , exceptions
                      , filepath
                      , mtl
-                     , store
                      , hasql
                      , hasql-pool
                      , hasql-transaction
