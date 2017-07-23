@@ -57,7 +57,8 @@ withTempStore run =
               Right x -> pure x
               Left errMsg -> fail (show errMsg)
         removeDb (globalConn, dbname) =
-            do runRes2 <-
+            do logInfo ("Removing temporary database" <> showText dbname)
+               runRes2 <-
                    flip S.run globalConn $ S.sql $ "DROP DATABASE IF EXISTS " <> dbname
                assertRight runRes2
                C.release globalConn
@@ -68,6 +69,7 @@ withTempStore run =
                    BSC.pack . take 10 . randomRs ('a', 'z') <$>
                    newStdGen
                let dbname = "chrtest" <> dbnameSuffix
+               logInfo ("Creating temporary database" <> showText dbname)
                runRes <-
                    flip S.run globalConn $
                    do S.sql $ "DROP DATABASE IF EXISTS " <> dbname
@@ -155,8 +157,8 @@ searchEntryQ =
     where
       sql =
           "SELECT "
-          <> "(key, ty, authors, title, year, journal, url, ee, pages, volume, editor, series, "
-          <> "  ts_rank_cd(tsv, query) AS rank)"
+          <> "key, ty, authors, title, year, journal, url, ee, pages, volume, editor, series, "
+          <> " ts_rank_cd(tsv, query) AS rank"
           <> " FROM "
           <> " entry, to_tsquery($1) query"
           <> " WHERE query @@ tsv ORDER BY rank DESC LIMIT 10"

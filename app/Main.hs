@@ -5,12 +5,14 @@ import PG.Import
 import PG.Store
 import PG.Xml
 
+import Control.Logger.Simple
 import System.Environment
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.Text as T
 
 main :: IO ()
 main =
+    withGlobalLogging (LogConfig Nothing True) $
     do args <- getArgs
        case args of
          ["import", file, dbSpec] ->

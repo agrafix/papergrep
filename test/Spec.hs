@@ -4,6 +4,7 @@ import PG.Store
 import PG.Types
 import PG.Xml
 
+import Control.Logger.Simple
 import Control.Monad.Trans.Resource
 import Data.Conduit
 import Data.List
@@ -15,6 +16,7 @@ import qualified Data.Vector as V
 
 main :: IO ()
 main =
+    withGlobalLogging (LogConfig Nothing True) $
     hspec $
     do describe "parser" $
            it "parses dblp-mini.xml" $
@@ -24,25 +26,30 @@ main =
               res `shouldBe` dblpMini
        describe "search engine" $
            do it "finds author names" $
-                  do assertSearch "sanjeev"
-                     assertSearch "sanje"
-                     assertSearch "s. saxena"
-                     assertSearch "saxena, sanjeev"
+                  withTempStore $ \store ->
+                  do importToStore store (fromFile "test-data/dblp-mini.xml")
+                     assertSearch store "sanjeev"
+                     assertSearch store "sanje"
+                     assertSearch store "s. saxena"
+                     assertSearch store "saxena, sanjeev"
               it "finds by title" $
-                  do assertSearch "parallel integer sorting"
-                     assertSearch "CRCW Models"
-                     assertSearch "simulation models"
+                  withTempStore $ \store ->
+                  do importToStore store (fromFile "test-data/dblp-mini.xml")
+                     assertSearch store "parallel integer sorting"
+                     assertSearch store "CRCW Models"
+                     assertSearch store "simulation models"
               it "title and author" $
-                  do assertSearch "simulation models sanjeev"
---              it "title and author with noise" $
---                  do assertSearch "simulation models sanjeev foo bar baz"
+                  withTempStore $ \store ->
+                  do importToStore store (fromFile "test-data/dblp-mini.xml")
+                     assertSearch store "simulation models sanjeev"
+              it "title and author with noise" $
+                   withTempStore $ \store ->
+                  do importToStore store (fromFile "test-data/dblp-mini.xml")
+                     assertSearch store "simulation models sanjeev foo bar baz"
 
-assertSearch :: T.Text -> IO ()
-assertSearch q =
-     do sr <-
-            withTempStore $ \store ->
-            do importToStore store (fromFile "test-data/dblp-mini.xml")
-               searchEntry store q
+assertSearch :: Store -> T.Text -> IO ()
+assertSearch store q =
+     do sr <- searchEntry store q
         let es = re_entry <$> sortOn re_rank (V.toList sr)
         es `shouldBe` [sanjeev]
 

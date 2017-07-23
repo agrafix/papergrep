@@ -23,7 +23,7 @@ CREATE FUNCTION entry_search_trigger() RETURNS trigger AS $$
 begin
   new.tsv :=
     setweight(to_tsvector('english', new.title), 'A') ||
-    setweight(to_tsvector(string_agg(new.authors, ' ')), 'A') ||
+    setweight(to_tsvector(array_to_string(new.authors, ' ')), 'A') ||
     setweight(to_tsvector('english', coalesce(new.journal,'')), 'B') ||
     setweight(to_tsvector('english', coalesce(new.series,'')), 'B') ||
     setweight(to_tsvector(coalesce(new.editor,'')), 'B');
