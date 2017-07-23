@@ -10,6 +10,6 @@ import Control.Monad.Trans.Resource
 main :: IO ()
 main =
     runResourceT $
-    withSearchEngine (fromFile "../grabcite-net/dblp.xml") $ \s ->
+    withSearchEngine (fromFile "dblp.xml") $ \s ->
     do res <- searchEntry s "Peter Thiemann"
        liftIO $ print res

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE dblp SYSTEM "dblp.dtd">
+<dblp>
+<article mdate="2017-05-28" key="journals/acta/Saxena96">
+<author>Sanjeev Saxena</author>
+<title>Parallel Integer Sorting and Simulation Amongst CRCW Models.</title>
+<pages>607-619</pages>
+<year>1996</year>
+<volume>33</volume>
+<journal>Acta Inf.</journal>
+<number>7</number>
+<url>db/journals/acta/acta33.html#Saxena96</url>
+<ee>https://doi.org/10.1007/BF03036466</ee>
+</article>
+<article mdate="2017-05-28" key="journals/acta/BulychevDLL14">
+<author>Peter E. Bulychev</author>
+<author>Alexandre David</author>
+<author>Kim G. Larsen</author>
+<author>Guangyuan Li</author>
+<title>Efficient controller synthesis for a fragment of MTL<sub>0,&#8734;</sub>.</title>
+<pages>165-192</pages>
+<year>2014</year>
+<volume>51</volume>
+<journal>Acta Inf.</journal>
+<number>3-4</number>
+<ee>https://doi.org/10.1007/s00236-013-0189-z</ee>
+<url>db/journals/acta/acta51.html#BulychevDLL14</url>
+</article>
+<article mdate="2017-05-18" key="journals/combinatorica/DudekR11">
+<author>Andrzej Dudek</author>
+<author>Vojtech R&ouml;dl</author>
+<title>On <i>K</i><sub><i>s</i></sub>-free subgraphs in <i>K</i><sub><i>s</i>+<i>k</i></sub>-free graphs and vertex Folkman numbers.</title>
+<pages>39-53</pages>
+<year>2011</year>
+<volume>31</volume>
+<journal>Combinatorica</journal>
+<number>1</number>
+<ee>https://doi.org/10.1007/s00493-011-2626-3</ee>
+<url>db/journals/combinatorica/combinatorica31.html#DudekR11</url>
+</article>
+<proceedings mdate="2017-05-26" key="journals/thipeac/2009-2">
+<editor>Per Stenstr&ouml;m</editor>
+<title>Transactions on High-Performance Embedded Architectures and Compilers II</title>
+<volume>5470</volume>
+<year>2009</year>
+<ee>https://doi.org/10.1007/978-3-642-00904-4</ee>
+<isbn>978-3-642-00903-7</isbn>
+<booktitle>Trans. HiPEAC</booktitle>
+<series href="db/journals/lncs.html">Lecture Notes in Computer Science</series>
+<publisher>Springer</publisher>
+<url>db/journals/thipeac/thipeac2.html</url>
+</proceedings>
+</dblp>

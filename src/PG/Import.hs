@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE BangPatterns #-}
 module PG.Import
     ( Entry(..)
     , fromBS, fromFile
@@ -11,7 +12,10 @@ import PG.Types
 import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.Trans.Resource
+import Data.Char
 import Data.Conduit
+import Data.Maybe
+import Data.Monoid
 import Data.Option
 import Data.XML.Types
 import Text.XML.Stream.Parse
@@ -38,30 +42,68 @@ parseEntries =
 parseEntry :: MonadThrow m => Consumer Event m (Maybe Entry)
 parseEntry =
     tag' (anyOf entryTags) (requireAttr "key" <* ignoreAttrs) $ \e_key ->
-    do e_authors <- V.fromList <$> many (tagIgnoreAttrs "author" content)
-       e_title <-
-           tagIgnoreAttrs "title" titleParser >>= \t ->
-           case t of
-             Nothing -> throwM (XmlException "Missing title tag" Nothing)
-             Just ok -> pure $ T.concat ok
-       e_pages <- maybeToOption <$> tagIgnoreAttrs "pages" content
-       e_year <- maybeToOption <$> tagIgnoreAttrs "year" content
-       e_volume <- maybeToOption <$> tagIgnoreAttrs "volume" content
-       e_journal <- maybeToOption <$> tagIgnoreAttrs "journal" content
-       e_url <- maybeToOption <$> tagIgnoreAttrs "url" content
-       e_ee <- maybeToOption <$> tagIgnoreAttrs "ee" content
-       many_ ignoreAnyTreeContent
+    do tagKvs <-
+           many $
+           tag anyName (\n -> ignoreAttrs *> pure n) $ \n ->
+           (,) <$> pure n <*> innerText
+       let getMany x = map snd $ filter ((==) x . fst) tagKvs
+           getOpt = maybeToOption . listToMaybe . getMany
+           getReq x =
+               case getOpt x of
+                 Some y -> pure y
+                 None ->
+                     throwM $
+                     XmlException (T.unpack $ "Missing " <> nameLocalName x <> " for " <> e_key)
+                     Nothing
+           e_authors = V.fromList $ getMany "author"
+       e_title <- getReq "title"
+       let e_pages = getOpt "pages"
+           e_year = getOpt "year"
+           e_volume = getOpt "volume"
+           e_journal = getOpt "journal"
+           e_ee = getOpt "ee"
+           e_url = getOpt "url"
        pure Entry {..}
     where
       entryTags =
           [ "www", "phdthesis", "inproceedings", "incollection"
           , "proceedings", "book", "mastersthesis", "article"
           ]
-      textTag x =
-          tagIgnoreAttrs x content
-      titleParser =
-          many $
-          contentMaybe
-              `orE` textTag "i"
-              `orE` textTag "sub"
-              `orE` textTag "sup"
+
+innerText :: MonadThrow m => ConduitM Event o m T.Text
+innerText =
+    loop [] ""
+    where
+        loop !stack !out =
+            do (x, _) <- dropWS []
+               case x of
+                 Nothing -> pure out
+                 Just (EventContent (ContentText t)) -> loop stack (out <> t)
+                 Just (EventBeginElement el _) -> loop (el : stack) out
+                 Just (EventEndElement el) ->
+                     case stack of
+                       (expectedEl : rest)
+                           | expectedEl == el -> loop rest out
+                           | otherwise -> throwM (InvalidEndElement el x)
+                       [] ->
+                           do leftover (EventEndElement el)
+                              pure out
+                 Just _ -> loop stack out
+        dropWS leftovers =
+            do x <- await
+               let leftovers' = maybe id (:) x leftovers
+               case isWhitespace <$> x of
+                 Just True -> dropWS leftovers'
+                 _ -> return (x, leftovers')
+
+
+isWhitespace :: Event -> Bool
+isWhitespace EventBeginDocument = True
+isWhitespace EventEndDocument = True
+isWhitespace EventBeginDoctype{} = True
+isWhitespace EventEndDoctype = True
+isWhitespace EventInstruction{} = True
+isWhitespace (EventContent (ContentText t)) = T.all isSpace t
+isWhitespace EventComment{} = True
+isWhitespace (EventCDATA t) = T.all isSpace t
+isWhitespace _ = False
