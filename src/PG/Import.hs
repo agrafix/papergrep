@@ -63,6 +63,8 @@ parseEntry =
            e_journal = getOpt "journal"
            e_ee = getOpt "ee"
            e_url = getOpt "url"
+           e_editor = getOpt "editor"
+           e_series = getOpt "series"
        pure Entry {..}
     where
       entryTags =

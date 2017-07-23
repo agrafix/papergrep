@@ -30,6 +30,8 @@ dblpMini =
       , e_ee = Some "https://doi.org/10.1007/BF03036466"
       , e_pages = Some "607-619"
       , e_volume = Some "33"
+      , e_editor = None
+      , e_series = None
       }
     , Entry
       { e_key = "journals/acta/BulychevDLL14"
@@ -40,7 +42,10 @@ dblpMini =
       , e_url = Some "db/journals/acta/acta51.html#BulychevDLL14"
       , e_ee = Some "https://doi.org/10.1007/s00236-013-0189-z"
       , e_pages = Some "165-192"
-      , e_volume = Some "51"}
+      , e_volume = Some "51"
+      , e_editor = None
+      , e_series = None
+      }
     , Entry
       {e_key = "journals/combinatorica/DudekR11"
       , e_authors = V.fromList ["Andrzej Dudek","Vojtech R\246dl"]
@@ -51,6 +56,8 @@ dblpMini =
       , e_ee = Some "https://doi.org/10.1007/s00493-011-2626-3"
       , e_pages = Some "39-53"
       , e_volume = Some "31"
+      , e_editor = None
+      , e_series = None
       }
     , Entry
       { e_key = "journals/thipeac/2009-2"
@@ -62,5 +69,7 @@ dblpMini =
       , e_ee = Some "https://doi.org/10.1007/978-3-642-00904-4"
       , e_pages = None
       , e_volume = Some "5470"
+      , e_editor = Some "Per Stenstr\246m"
+      , e_series = Some "Lecture Notes in Computer Science"
       }
     ]

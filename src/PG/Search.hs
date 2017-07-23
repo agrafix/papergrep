@@ -36,6 +36,8 @@ data SearchField
     | SfEE
     | SfPages
     | SfVolume
+    | SfEditor
+    | SfSeries
     deriving (Ord, Eq, Ix, Bounded)
 
 data Search
@@ -78,9 +80,11 @@ withSearchEngine src go =
                   case f of
                     SfKey -> 1.0
                     SfAuthors -> 10.0
+                    SfEditor -> 8.0
                     SfTitle -> 10.0
                     SfYear -> 5.0
                     SfJournal -> 8.0
+                    SfSeries -> 8.0
                     SfUrl -> 1.0
                     SfEE -> 1.0
                     SfPages -> 0.1
@@ -96,6 +100,8 @@ withSearchEngine src go =
           case f of
             SfKey -> [e_key e]
             SfAuthors -> concatMap handleAuthor (e_authors e)
+            SfEditor -> concatMap handleAuthor $ maybeToList $ optionToMaybe (e_editor e)
+            SfSeries -> optMiscField (e_series e)
             SfTitle -> handleTitle (e_title e)
             SfYear -> optMiscField (e_year e)
             SfJournal -> optMiscField (e_journal e)

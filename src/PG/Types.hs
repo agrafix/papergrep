@@ -20,6 +20,8 @@ data Entry
     , e_ee :: !(Option T.Text)
     , e_pages :: !(Option T.Text)
     , e_volume :: !(Option T.Text)
+    , e_editor :: !(Option T.Text)
+    , e_series :: !(Option T.Text)
     } deriving (Show, Eq, Generic)
 
 instance Store Entry
