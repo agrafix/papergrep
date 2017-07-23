@@ -1,10 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 module PG.Types where
 
 import Data.Option
-import Data.Store (Store)
+import Data.Text.ToFromText
 import GHC.Generics
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -18,9 +19,25 @@ data EntryType
     | EtBook
     | EtMaster
     | EtArticle
-    deriving (Show, Eq, Generic)
+    deriving (Show, Eq, Bounded, Enum, Generic)
 
-instance Store EntryType
+instance ToFromText EntryType where
+    toText et =
+        case et of
+          EtWWW -> "www"
+          EtPhd -> "phdthesis"
+          EtInProc -> "inproceedings"
+          EtInColl -> "incollection"
+          EtProc -> "proceedings"
+          EtBook -> "book"
+          EtMaster -> "mastersthesis"
+          EtArticle -> "article"
+
+data RankedEntry
+    = RankedEntry
+    { re_rank :: !Double
+    , re_entry :: !Entry
+    } deriving (Show, Eq, Generic)
 
 data Entry
     = Entry
@@ -28,7 +45,7 @@ data Entry
     , e_type :: !EntryType
     , e_authors :: {-# UNPACK #-} !(V.Vector T.Text)
     , e_title :: {-# UNPACK #-} !T.Text
-    , e_year :: !(Option T.Text)
+    , e_year :: !(Option Int)
     , e_journal :: !(Option T.Text)
     , e_url :: !(Option T.Text)
     , e_ee :: !(Option T.Text)
@@ -37,7 +54,3 @@ data Entry
     , e_editor :: !(Option T.Text)
     , e_series :: !(Option T.Text)
     } deriving (Show, Eq, Generic)
-
-instance Store Entry
-
-instance Store a => Store (Option a)

@@ -10,6 +10,9 @@ extra-deps:
   - xml-conduit-1.5.1
   - tokenize-0.3.0
   - snowball-1.0.0.1
+  - hasql-pool-0.4.1
+  - simple-logger-0.0.3
+  - text-utils-0.1.0.0
 
 extra-include-dirs:
   - /usr/local/opt/icu4c/include
