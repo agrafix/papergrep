@@ -2,6 +2,7 @@
 module Main where
 
 import PG.Import
+import PG.Server
 import PG.Store
 import PG.Xml
 
@@ -22,5 +23,8 @@ main =
              do store <- newPgSqlStore (BSC.pack dbSpec)
                 res <- searchEntry store (T.pack query)
                 print res
+         ["server", dbSpec, portStr] ->
+             do store <- newPgSqlStore (BSC.pack dbSpec)
+                launch (read portStr) store
          _ ->
              putStrLn "Bad usage"

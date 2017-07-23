@@ -19,6 +19,8 @@ library
                      , PG.Import
                      , PG.Types
                      , PG.Store
+                     , PG.Api
+                     , PG.Server
   build-depends:       base >= 4.7 && < 5
                      , text
                      , vector
@@ -40,6 +42,14 @@ library
                      , text-utils
                      , errors
                      , random
+                     , servant
+                     , servant-server
+                     , servant-js
+                     , hjsmin
+                     , warp
+                     , http-types
+                     , http-media
+                     , superrecord
   default-language:    Haskell2010
   ghc-options:         -Wall
 

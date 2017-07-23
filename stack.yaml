@@ -7,3 +7,4 @@ extra-deps:
   - hasql-pool-0.4.1
   - simple-logger-0.0.3
   - text-utils-0.1.0.0
+  - superrecord-0.3.0.0
