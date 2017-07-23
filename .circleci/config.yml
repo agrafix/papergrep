@@ -31,4 +31,4 @@ jobs:
           command: 'stack build --fast --pedantic'
       - run:
           name: stack test
-          command: 'stack test --fast'
+          command: 'createdb root && stack test --fast'
