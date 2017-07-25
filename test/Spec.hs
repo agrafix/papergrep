@@ -43,6 +43,7 @@ main =
                      assertSearch store "parallel integer sorting" sanjeev
                      assertSearch store "CRCW Models" sanjeev
                      assertSearch store "simulation models" sanjeev
+                     assertSearch store "\"simulation models\"" sanjeev
                      assertSearch store "ks-free subgraphs folkman" dudek
                      assertSearch store "ks-free subgraphs, folkman" dudek
                      assertSearch store "ks-free subgraphs: folkman" dudek

@@ -161,19 +161,18 @@ searchEntryQ =
       sql =
           "SELECT "
           <> "key, ty, authors, title, year, journal, url, ee, pages, volume, editor, series, "
-          <> " (ts_rank_cd(tsv, query) + similarity(search_string, $2))::float8 AS rank"
+          <> " (ts_rank_cd(tsv, query)::float8 + similarity(search_string, $2)::float8)::float8 AS rank"
           <> " FROM "
           <> " entry, to_tsquery($1) query"
           <> " WHERE"
           <> " ( query @@ tsv "
           <> "   OR (search_string % $2 AND similarity(search_string, $2) > 0.2)"
           <> "   OR (title % $2 AND similarity(title, $2) > 0.2)"
-          <> "   OR (author_list % $3 AND similarity(author_list, $3) > 0.2)"
-          <> " ) AND ($4 = True OR year = ANY($5))"
+          <> "   OR (author_list % $2 AND similarity(author_list, $2) > 0.2)"
+          <> " ) AND ($3 = True OR year = ANY($4))"
           <> " ORDER BY rank DESC LIMIT 10"
       encoder =
           contramap mkQuery (E.value E.text)
-          <> contramap id (E.value E.text)
           <> contramap id (E.value E.text)
           <> contramap (V.null . extractFullYears) (E.value E.bool)
           <> contramap extractFullYears (E.value (E.array (E.arrayDimension V.foldl' (E.arrayValue E.int4))))
@@ -199,6 +198,7 @@ mkQuery :: T.Text -> T.Text
 mkQuery =
     T.intercalate " & "
     . map (<> ":*")
+    . filter (\x -> T.length x >= 2)
     . filter (T.all isAlpha)
     . T.words
 
