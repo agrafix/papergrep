@@ -32,6 +32,7 @@ main =
                      assertSearch store "sanje" sanjeev
                      assertSearch store "s. saxena" sanjeev
                      assertSearch store "saxena, sanjeev" sanjeev
+                     assertSearchRank store "saxena, sanjeev" (\r -> r > 0.5)
                      assertSearchNoRes store "johannes thiemann"
                      assertSearchNoRes store "johannes"
                      assertSearchNoRes store "thiemann"
@@ -58,6 +59,13 @@ main =
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
                      assertSearch store "sanjeev 1996" sanjeev
                      assertSearchNoRes store "sanjeev 2010"
+
+assertSearchRank :: Store -> T.Text -> (Double -> Bool) -> IO ()
+assertSearchRank store q c =
+     do sr <- searchEntry store q
+        case re_rank <$> sortOn re_rank (V.toList sr) of
+            [] -> expectationFailure "No results"
+            (r : _) -> r `shouldSatisfy` c
 
 assertSearch :: Store -> T.Text -> Entry -> IO ()
 assertSearch store q e =

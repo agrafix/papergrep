@@ -161,7 +161,7 @@ searchEntryQ =
       sql =
           "SELECT "
           <> "key, ty, authors, title, year, journal, url, ee, pages, volume, editor, series, "
-          <> " ts_rank_cd(tsv, query) + similarity(search_string, $2) AS rank"
+          <> " (ts_rank_cd(tsv, query) + similarity(search_string, $2))::float8 AS rank"
           <> " FROM "
           <> " entry, to_tsquery($1) query"
           <> " WHERE"
