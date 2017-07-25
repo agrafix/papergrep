@@ -170,7 +170,7 @@ searchEntryQ =
           <> "   OR (title % $2 AND similarity(title, $2) > 0.2)"
           <> "   OR (author_list % $2 AND similarity(author_list, $2) > 0.2)"
           <> " ) AND ($3 = True OR year = ANY($4))"
-          <> " ORDER BY rank DESC LIMIT 10"
+          <> " ORDER BY rank DESC LIMIT 25"
       encoder =
           contramap mkQuery (E.value E.text)
           <> contramap id (E.value E.text)
