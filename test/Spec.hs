@@ -28,30 +28,33 @@ main =
            do it "finds author names" $
                   withTempStore $ \store ->
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
-                     assertSearch store "sanjeev"
-                     assertSearch store "sanje"
-                     assertSearch store "s. saxena"
-                     assertSearch store "saxena, sanjeev"
+                     assertSearch store "sanjeev" sanjeev
+                     assertSearch store "sanje" sanjeev
+                     assertSearch store "s. saxena" sanjeev
+                     assertSearch store "saxena, sanjeev" sanjeev
               it "finds by title" $
                   withTempStore $ \store ->
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
-                     assertSearch store "parallel integer sorting"
-                     assertSearch store "CRCW Models"
-                     assertSearch store "simulation models"
+                     assertSearch store "parallel integer sorting" sanjeev
+                     assertSearch store "CRCW Models" sanjeev
+                     assertSearch store "simulation models" sanjeev
+                     assertSearch store "ks-free subgraphs folkman" dudek
+                     assertSearch store "ks-free subgraphs, folkman" dudek
+                     assertSearch store "ks-free subgraphs: folkman" dudek
               it "title and author" $
                   withTempStore $ \store ->
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
-                     assertSearch store "simulation models sanjeev"
+                     assertSearch store "simulation models sanjeev" sanjeev
               it "title and author with noise" $
                    withTempStore $ \store ->
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
-                     assertSearch store "simulation models sanjeev foo bar baz"
+                     assertSearch store "simulation models sanjeev foo bar baz" sanjeev
 
-assertSearch :: Store -> T.Text -> IO ()
-assertSearch store q =
+assertSearch :: Store -> T.Text -> Entry -> IO ()
+assertSearch store q e =
      do sr <- searchEntry store q
         let es = re_entry <$> sortOn re_rank (V.toList sr)
-        es `shouldBe` [sanjeev]
+        es `shouldBe` [e]
 
 sanjeev :: Entry
 sanjeev =
@@ -66,6 +69,23 @@ sanjeev =
     , e_ee = Some "https://doi.org/10.1007/BF03036466"
     , e_pages = Some "607-619"
     , e_volume = Some "33"
+    , e_editor = None
+    , e_series = None
+    }
+
+dudek :: Entry
+dudek =
+    Entry
+    { e_key = "journals/combinatorica/DudekR11"
+    , e_type = EtArticle
+    , e_authors = V.fromList ["Andrzej Dudek","Vojtech R\246dl"]
+    , e_title = Some "On Ks-free subgraphs in Ks+k-free graphs and vertex Folkman numbers."
+    , e_year = Some 2011
+    , e_journal = Some "Combinatorica"
+    , e_url = Some "db/journals/combinatorica/combinatorica31.html#DudekR11"
+    , e_ee = Some "https://doi.org/10.1007/s00493-011-2626-3"
+    , e_pages = Some "39-53"
+    , e_volume = Some "31"
     , e_editor = None
     , e_series = None
     }
@@ -87,20 +107,7 @@ dblpMini =
       , e_editor = None
       , e_series = None
       }
-    , Entry
-      { e_key = "journals/combinatorica/DudekR11"
-      , e_type = EtArticle
-      , e_authors = V.fromList ["Andrzej Dudek","Vojtech R\246dl"]
-      , e_title = Some "On Ks-free subgraphs in Ks+k-free graphs and vertex Folkman numbers."
-      , e_year = Some 2011
-      , e_journal = Some "Combinatorica"
-      , e_url = Some "db/journals/combinatorica/combinatorica31.html#DudekR11"
-      , e_ee = Some "https://doi.org/10.1007/s00493-011-2626-3"
-      , e_pages = Some "39-53"
-      , e_volume = Some "31"
-      , e_editor = None
-      , e_series = None
-      }
+    , dudek
     , Entry
       { e_key = "journals/thipeac/2009-2"
       , e_type = EtProc

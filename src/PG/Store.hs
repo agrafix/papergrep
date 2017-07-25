@@ -13,6 +13,7 @@ import PG.Types
 import Control.Exception
 import Control.Logger.Simple
 import Control.Monad.Trans
+import Data.Char
 import Data.Functor.Contravariant
 import Data.Option
 import Data.Text.ToFromText
@@ -158,12 +159,18 @@ searchEntryQ =
       sql =
           "SELECT "
           <> "key, ty, authors, title, year, journal, url, ee, pages, volume, editor, series, "
-          <> " ts_rank_cd(tsv, query) AS rank"
+          <> " ts_rank_cd(tsv, query) + similarity(search_string, $2) AS rank"
           <> " FROM "
           <> " entry, to_tsquery($1) query"
-          <> " WHERE query @@ tsv ORDER BY rank DESC LIMIT 10"
+          <> " WHERE query @@ tsv "
+          <> " OR (search_string % $2 AND similarity(search_string, $2) > 0.2)"
+          <> " OR (title % $2 AND similarity(title, $2) > 0.2)"
+          <> " OR (author_list % $3 AND similarity(author_list, $3) > 0.2)"
+          <> " ORDER BY rank DESC LIMIT 10"
       encoder =
           contramap mkQuery (E.value E.text)
+          <> contramap id (E.value E.text)
+          <> contramap id (E.value E.text)
       decoder =
           D.rowsVector $
           do e_key <- D.value D.text
@@ -184,4 +191,7 @@ searchEntryQ =
 
 mkQuery :: T.Text -> T.Text
 mkQuery =
-    T.intercalate " | " . map (<> ":*") . T.words
+    T.intercalate " & "
+    . map (<> ":*")
+    . filter (T.all isAlpha)
+    . T.words
