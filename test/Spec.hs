@@ -24,8 +24,13 @@ main =
                   runResourceT $
                   fromFile "test-data/dblp-mini.xml" $$ CL.consume
               res `shouldBe` dblpMini
-       describe "search engine" $
-           do it "finds author names" $
+       describe "data store" $
+           do it "finds by key" $
+                  withTempStore $ \store ->
+                  do importToStore store (fromFile "test-data/dblp-mini.xml")
+                     getEntry store "journals/acta/Saxena96" `shouldReturn` Just sanjeev
+                     getEntry store "journals/foobar" `shouldReturn` Nothing
+              it "finds author names" $
                   withTempStore $ \store ->
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
                      assertSearch store "sanjeev" sanjeev

@@ -4,7 +4,7 @@
 module PG.Store
     ( newPgSqlStore, withTempStore
     , Store
-    , putEntry, searchEntry
+    , putEntry, searchEntry, getEntry
     )
 where
 
@@ -210,3 +210,38 @@ extractFullYears =
     . filter (\x -> T.length x == 4)
     . filter (T.all isNumber)
     . T.words
+
+getEntry :: Store -> T.Text -> IO (Maybe Entry)
+getEntry store entry =
+    withPool store $
+    dbTx Tx.ReadCommitted Tx.Write $
+    Tx.query entry getEntryQ
+
+getEntryQ :: Q.Query T.Text (Maybe Entry)
+getEntryQ =
+    Q.statement sql encoder decoder True
+    where
+      sql =
+          "SELECT "
+          <> "key, ty, authors, title, year, journal, url, ee, pages, volume, editor, series"
+          <> " FROM "
+          <> " entry"
+          <> " WHERE"
+          <> " key = $1"
+      encoder =
+          contramap id (E.value E.text)
+      decoder =
+          D.maybeRow $
+          do e_key <- D.value D.text
+             e_type <- D.value D.text >>= fromText
+             e_authors <- D.value (D.array (D.arrayDimension V.replicateM (D.arrayValue D.text)))
+             e_title <- maybeToOption <$> D.nullableValue D.text
+             e_year <- fmap fromIntegral . maybeToOption <$> D.nullableValue D.int4
+             e_journal <- maybeToOption <$> D.nullableValue D.text
+             e_url <- maybeToOption <$> D.nullableValue D.text
+             e_ee <- maybeToOption <$> D.nullableValue D.text
+             e_pages <- maybeToOption <$> D.nullableValue D.text
+             e_volume <- maybeToOption <$> D.nullableValue D.text
+             e_editor <- maybeToOption <$> D.nullableValue D.text
+             e_series <- maybeToOption <$> D.nullableValue D.text
+             pure Entry {..}

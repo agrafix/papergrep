@@ -7,24 +7,26 @@ import SuperRecord
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
+type SearchEntry
+    = Record
+    '[ "key" := T.Text
+     , "ty" := T.Text
+     , "authors" := V.Vector T.Text
+     , "title" := Maybe T.Text
+     , "year" := Maybe Int
+     , "journal" := Maybe T.Text
+     , "url" := Maybe T.Text
+     , "ee" := Maybe T.Text
+     , "pages" := Maybe T.Text
+     , "volume" := Maybe T.Text
+     , "editor" := Maybe T.Text
+     , "series" := Maybe T.Text
+     ]
+
 type SearchResult
     = Record
     '[ "rank" := Double
-     , "entry" :=
-         Record
-         '[ "key" := T.Text
-          , "ty" := T.Text
-          , "authors" := V.Vector T.Text
-          , "title" := Maybe T.Text
-          , "year" := Maybe Int
-          , "journal" := Maybe T.Text
-          , "url" := Maybe T.Text
-          , "ee" := Maybe T.Text
-          , "pages" := Maybe T.Text
-          , "volume" := Maybe T.Text
-          , "editor" := Maybe T.Text
-          , "series" := Maybe T.Text
-          ]
+     , "entry" := SearchEntry
      ]
 
 type SearchResults
@@ -34,3 +36,4 @@ type SearchResults
 
 type PaperGrepApi
     = "search" :> QueryParam "q" T.Text :> Get '[JSON] SearchResults
+    :<|> "get" :> QueryParam "id" T.Text :> Get '[JSON] SearchEntry

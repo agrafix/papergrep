@@ -15,6 +15,7 @@ import PG.Api
 import PG.Store
 import PG.Types
 
+import Control.Monad.Except
 import Control.Monad.Reader
 import Data.Monoid
 import Data.Text.ToFromText
@@ -90,9 +91,29 @@ backendApi ::
     ( MonadReader (Rec env) m
     , Has "store" env Store
     , MonadIO m
+    , MonadError ServantErr m
     ) => ServerT PaperGrepApi m
 backendApi =
     searchApi
+    :<|> getApi
+
+getApi ::
+    ( MonadReader (Rec env) m
+    , Has "store" env Store
+    , MonadIO m
+    , MonadError ServantErr m
+    )
+    => Maybe T.Text -> m SearchEntry
+getApi searchKey =
+    do s <- asksR #store
+       case searchKey of
+         Nothing -> throwError err404
+         Just sk ->
+             do res <- liftIO (getEntry s sk)
+                case res of
+                  Nothing -> throwError err404
+                  Just ok ->
+                      pure $ packEntry ok
 
 searchApi ::
     ( MonadReader (Rec env) m
@@ -110,20 +131,21 @@ searchApi searchQuery =
     where
         conv re =
             #rank := re_rank re
-            & #entry :=
-                ( let e = re_entry re
-                  in #key := e_key e
-                     & #ty := toText (e_type e)
-                     & #authors := e_authors e
-                     & #title := optionToMaybe (e_title e)
-                     & #year := optionToMaybe (e_year e)
-                     & #journal := optionToMaybe (e_journal e)
-                     & #url := optionToMaybe (e_url e)
-                     & #ee := optionToMaybe (e_ee e)
-                     & #pages := optionToMaybe (e_pages e)
-                     & #volume := optionToMaybe (e_volume e)
-                     & #editor := optionToMaybe (e_editor e)
-                     & #series := optionToMaybe (e_series e)
-                     & rnil
-                )
+            & #entry := packEntry (re_entry re)
             & rnil
+
+packEntry :: Entry -> SearchEntry
+packEntry e =
+    #key := e_key e
+    & #ty := toText (e_type e)
+    & #authors := e_authors e
+    & #title := optionToMaybe (e_title e)
+    & #year := optionToMaybe (e_year e)
+    & #journal := optionToMaybe (e_journal e)
+    & #url := optionToMaybe (e_url e)
+    & #ee := optionToMaybe (e_ee e)
+    & #pages := optionToMaybe (e_pages e)
+    & #volume := optionToMaybe (e_volume e)
+    & #editor := optionToMaybe (e_editor e)
+    & #series := optionToMaybe (e_series e)
+    & rnil
