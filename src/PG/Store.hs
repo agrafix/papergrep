@@ -10,11 +10,13 @@ where
 
 import PG.Types
 
+import Control.Error
 import Control.Exception
 import Control.Logger.Simple
 import Control.Monad.Trans
 import Data.Char
 import Data.Functor.Contravariant
+import Data.Int
 import Data.Option
 import Data.Text.ToFromText
 import System.Random
@@ -43,9 +45,9 @@ withPool :: Store -> S.Session a -> IO a
 withPool pss sess =
     do res <- P.use (unStore pss) sess
        case res of
-         Left err ->
-           do logError (showText err)
-              fail (show err)
+         Left errMsg ->
+           do logError (showText errMsg)
+              fail (show errMsg)
          Right ok -> pure ok
 
 withTempStore :: (Store -> IO a) -> IO a
@@ -98,8 +100,8 @@ newPgSqlStore connStr =
                      res <-
                          dbTx Tx.ReadCommitted Tx.Write $ M.runMigration mig
                      case res of
-                       M.MigrationError err ->
-                           fail err
+                       M.MigrationError errMsg ->
+                           fail errMsg
                        M.MigrationSuccess ->
                            do liftIO $ logNote ("Finished " <> niceMigration mig)
                               loop more
@@ -162,15 +164,19 @@ searchEntryQ =
           <> " ts_rank_cd(tsv, query) + similarity(search_string, $2) AS rank"
           <> " FROM "
           <> " entry, to_tsquery($1) query"
-          <> " WHERE query @@ tsv "
-          <> " OR (search_string % $2 AND similarity(search_string, $2) > 0.2)"
-          <> " OR (title % $2 AND similarity(title, $2) > 0.2)"
-          <> " OR (author_list % $3 AND similarity(author_list, $3) > 0.2)"
+          <> " WHERE"
+          <> " ( query @@ tsv "
+          <> "   OR (search_string % $2 AND similarity(search_string, $2) > 0.2)"
+          <> "   OR (title % $2 AND similarity(title, $2) > 0.2)"
+          <> "   OR (author_list % $3 AND similarity(author_list, $3) > 0.2)"
+          <> " ) AND ($4 = True OR year = ANY($5))"
           <> " ORDER BY rank DESC LIMIT 10"
       encoder =
           contramap mkQuery (E.value E.text)
           <> contramap id (E.value E.text)
           <> contramap id (E.value E.text)
+          <> contramap (V.null . extractFullYears) (E.value E.bool)
+          <> contramap extractFullYears (E.value (E.array (E.arrayDimension V.foldl' (E.arrayValue E.int4))))
       decoder =
           D.rowsVector $
           do e_key <- D.value D.text
@@ -194,4 +200,13 @@ mkQuery =
     T.intercalate " & "
     . map (<> ":*")
     . filter (T.all isAlpha)
+    . T.words
+
+extractFullYears :: T.Text -> V.Vector Int32
+extractFullYears =
+    V.fromList
+    . filter (\x -> x > 1900 && x < 2100)
+    . mapMaybe (readMay . T.unpack)
+    . filter (\x -> T.length x == 4)
+    . filter (T.all isNumber)
     . T.words

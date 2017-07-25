@@ -46,15 +46,25 @@ main =
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
                      assertSearch store "simulation models sanjeev" sanjeev
               it "title and author with noise" $
-                   withTempStore $ \store ->
+                  withTempStore $ \store ->
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
                      assertSearch store "simulation models sanjeev foo bar baz" sanjeev
+              it "understands years" $
+                  withTempStore $ \store ->
+                  do importToStore store (fromFile "test-data/dblp-mini.xml")
+                     assertSearch store "sanjeev 1996" sanjeev
+                     assertSearchNoRes store "sanjeev 2010"
 
 assertSearch :: Store -> T.Text -> Entry -> IO ()
 assertSearch store q e =
      do sr <- searchEntry store q
         let es = re_entry <$> sortOn re_rank (V.toList sr)
         es `shouldBe` [e]
+
+assertSearchNoRes :: Store -> T.Text -> IO ()
+assertSearchNoRes store q =
+    searchEntry store q `shouldReturn` V.empty
+
 
 sanjeev :: Entry
 sanjeev =
