@@ -3,7 +3,7 @@ version:             0.1.0.0
 -- synopsis:
 -- description:
 homepage:            https://github.com/agrafix/papergrep#readme
-license:             AllRightsReserved
+license:             MIT
 author:              Alexander Thiemann
 maintainer:          mail@athiemann.net
 copyright:           2017 Alexander Thiemann <mail@athiemann.net>
