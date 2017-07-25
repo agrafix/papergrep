@@ -32,6 +32,10 @@ main =
                      assertSearch store "sanje" sanjeev
                      assertSearch store "s. saxena" sanjeev
                      assertSearch store "saxena, sanjeev" sanjeev
+                     assertSearchNoRes store "johannes thiemann"
+                     assertSearchNoRes store "johannes"
+                     assertSearchNoRes store "thiemann"
+                     assertSearchNoRes store "johannes thiemann"
               it "finds by title" $
                   withTempStore $ \store ->
                   do importToStore store (fromFile "test-data/dblp-mini.xml")
